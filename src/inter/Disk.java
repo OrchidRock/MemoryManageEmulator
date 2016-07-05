@@ -8,7 +8,6 @@ import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Scanner;
 
-import com.mysql.fabric.xmlrpc.base.Array;
 
 import tool.ConfLoader;
 import tool.ConfLoader.ConfType;

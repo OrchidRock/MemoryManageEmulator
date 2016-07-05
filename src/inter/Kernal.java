@@ -3,7 +3,6 @@ package inter;
 import java.awt.MultipleGradientPaint.ColorSpaceType;
 import java.util.Properties;
 
-import jdk.internal.dynalink.beans.StaticClass;
 import tool.ConfLoader;
 import tool.ConfLoader.ConfType;
 
