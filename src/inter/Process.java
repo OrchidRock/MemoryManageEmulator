@@ -27,7 +27,8 @@ public class Process {
 		long watetime=pretime.getTime()-arrivetime.getTime();
 		Float watetimef=new Float(watetime);
 		waittimeTable.add(PC, watetimef);
-		/*int result=MMU.getInstance().addressTranslate(pcb.ptIndex,
+		
+		int result=MMU.getInstance().addressTranslate(pcb.ptIndex,
 				accessTable.get(PC), READ, null);
 		if(result==0){ //success
 			
@@ -36,8 +37,8 @@ public class Process {
 					accessTable.get(PC), READ, null);
 		}
 	
-*/
-		Random rantime=new Random();
+
+		/*Random rantime=new Random();
 		float sleeptime=rantime.nextFloat()*5;
 		try {
 			Thread.sleep((long)sleeptime);
@@ -45,7 +46,7 @@ public class Process {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		*/
 		
 		Date afttime=new Date();
 		long exetime=afttime.getTime()-pretime.getTime();

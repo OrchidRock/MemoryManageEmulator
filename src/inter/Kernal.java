@@ -23,9 +23,10 @@ public class Kernal {
 	public static int PABN=-1;
 	public static int PtSizeOptimizePolicy=-1; //Page Table SizeOptimizePolicy
 	
-	public static int PageTableMaxIndex=-1;
 	
 	private Hashtable<Integer, PCB> pcbs=new Hashtable<>();// save  pcb for all process
+	private int PidMaxNumber=-1;
+	private int pidCurrentIndex=0;
 	
 	private Hashtable<Integer, ArrayList<Integer>> mappingtable=null; // local address ===> disk address
 	
@@ -33,7 +34,8 @@ public class Kernal {
 	
 	private int replacePolicy=-1;
 	//allcote pcb number
-	private int PidMaxIndex=0;
+	public static int PageTableMaxNumber=-1;
+	
 	public static Kernal createNewInstance(){
 		if(kernal==null)
 			kernal=new Kernal();
@@ -44,6 +46,11 @@ public class Kernal {
 		
 		Properties properties_pt=ConfLoader.getPropertiesByConfType(ConfType.PageTable);
 		PtSizeOptimizePolicy=Integer.valueOf(properties_pt.getProperty("SizeOptimizePolicy"));
+		if(PtSizeOptimizePolicy==Kernal.Inverted)
+			PageTableMaxNumber=1;
+		else
+			PageTableMaxNumber=(int)Math.pow(2,PABN-5);
+		kernal.PidMaxNumber=(int)Math.pow(2,PABN-5);
 		
 		kernal.replacePolicy=kernal.getReplacePolicyTag(properties.getProperty("ReplacePolicy"));
 		return kernal;
@@ -52,7 +59,16 @@ public class Kernal {
 		return kernal;
 	}
 	public PCB allocatePCB(){
-		PidMaxIndex++;
+		
+		int pid=getNextPid();
+		
+		if(PtSizeOptimizePolicy==Kernal.Inverted){
+			
+		}else{
+			
+		}
+		
+		/*PidMaxIndex++;
 		PageTableMaxIndex++;
 		PCB pcb=new PCB(PidMaxIndex,PageTableMaxIndex);
 		pcbs.put(new Integer(PidMaxIndex), pcb);
@@ -61,7 +77,8 @@ public class Kernal {
 		pTable.addNewPtAddress(PageTableMaxIndex);
 		
 		//Memory.getInstance().addPage(pTable,int index);
-		return pcb;
+*/		//return pcb;
+		return null;
 	}
 	public void pagefaultExceptionRoutine(int pid,int localAddress){
 		currentProcessPid=pid;
@@ -73,6 +90,21 @@ public class Kernal {
 		//if drity to disk
 		
 		
+	}
+	private int getNextPid(){
+		for(int i=pidCurrentIndex ;i<PidMaxNumber;i++){ // first fit
+			if(pcbs.get(new Integer(i))==null){
+				pidCurrentIndex=i;
+				return i;
+			}
+		}
+		for(int i=1;i<pidCurrentIndex;i++){
+			if(pcbs.get(new Integer(i))==null){
+				pidCurrentIndex=i;
+				return i;
+			}
+		}
+		return -1;
 	}
 	@Deprecated
 	public Integer getCurrentProcessPid(){
