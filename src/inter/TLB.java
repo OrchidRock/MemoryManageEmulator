@@ -27,6 +27,7 @@ public class TLB {
 		if(tlb.degreeAssociative>tlb.PTECount || tlb.degreeAssociative <1)
 			System.err.println("conf.tlb has error data");
 		tlb.ptes=new TLBPTE[tlb.PTECount];
+		
 		return tlb;
 	}
 	public static TLB getInstance(){

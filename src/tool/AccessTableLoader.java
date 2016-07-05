@@ -19,9 +19,10 @@ public class AccessTableLoader {
 			boolean isquit=false;
 			int linecount=0;
 			while(scanner.hasNext() && !isquit){
-				String line=scanner.nextLine();
+				String line=scanner.nextLine().trim();
 				linecount++;
-				
+				if(line.length()<1 || line.charAt(0)=='#')
+					continue;
 				String[] info=line.split("[ \t]+");
 				if(info.length>2){
 					System.err.println(path+" has invaild data at "+linecount);

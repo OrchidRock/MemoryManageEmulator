@@ -12,4 +12,7 @@ public class Page {
 		freeBit=true;
 		referenceBit=false;
 	}
+	public void addNewPtAddress(int ptindex){
+		ptAddress.add(new Integer(ptindex));
+	}
 }
