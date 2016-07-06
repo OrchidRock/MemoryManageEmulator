@@ -22,6 +22,6 @@ public class Memory {
 		return pages[index];
 	}
 	public void addPage(Page page,int index){
-		//
+		pages[index]=page;
 	}
 }

@@ -1,15 +1,16 @@
 package inter;
 public class FIFO {
-	int head;
-	int tail;
-	static int num=10;
-	int queue[]=new int[num];	
-	boolean isNull;
+	private int head;
+	private int tail;
+	private int num=10;
+	private int queue[]=new int[num];	
+	private boolean isNull;
 
-	public FIFO(){
+	public FIFO(int num){
 		head=0;
 		tail=0;
 		isNull=true;
+		this.num=num;
 	}
 	public void newPageReference(int pn){
 		if((head-tail+num)%num==1){
@@ -36,9 +37,9 @@ public class FIFO {
 	public int getReplacePage(){
 		return queue[head];
 	}
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		FIFO f=new FIFO();
 		for(int i=0;i<26;i++){f.newPageReference(i);}
-	}
+	}*/
 }

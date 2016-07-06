@@ -1,9 +1,11 @@
 package inter;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Scanner;
@@ -13,6 +15,7 @@ import tool.ConfLoader;
 import tool.ConfLoader.ConfType;
 public class Disk {
 
+	private final static String path="ThreeDayToSee.txt";
 	private static int platterCount;
 	private static int trackCount;
 	private static int sectorCount;
@@ -32,7 +35,25 @@ public class Disk {
 		platterCount=Integer.valueOf(platterCountS);
 		trackCount=Integer.valueOf(p.getProperty("TrackCount"));
 		sectorCount=Integer.valueOf(p.getProperty("SectionCount"));
+		
+		//init disk data
+		loadTestText();
 	    return disk;
+	}
+	private static void loadTestText(){
+		try {
+			BufferedReader reader=new BufferedReader(new FileReader(path));
+			String line;
+			ArrayList<Integer> mapping=Kernal.getInstance().getAllDiskAddress();
+			int index=0;
+			while(index<mapping.size() && (line=reader.readLine())!=null){
+				disk.dataTable.put(mapping.get(index), line);
+			}
+			reader.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	public static Disk getInstance(){
 		return disk;
@@ -45,21 +66,33 @@ public class Disk {
 		System.out.println(imfor);
 		
 	}	
-	public String read(int address){
-		String data;
-		data=dataTable.get(new Integer(address));
-		print(address);
-		return data;
+	public String[] read(Integer[] addresses){
+		ArrayList<String> blocks=new ArrayList<>();
+		for(int i=0;i<addresses.length;i++){
+			if(dataTable.containsKey(addresses[i])){
+				blocks.add(dataTable.get(addresses[i]));
+			}
+			else{
+				System.err.println("Disk.address : "+i+" is a empty block");
+			}
+		}
+		
+		return (String[])blocks.toArray();
 	}
-	public boolean writeBack(int address,String newData){
+	public void writeBack(Integer[] addresses,String[] newData){
 		if(dataTable==null)
 			dataTable=new Hashtable<>();
-		dataTable.remove(new Integer(address));
-		if(dataTable.put(new Integer(address), newData)!=null)
-		{
-			print(address);
-			return true;
+		if(newData.length != addresses.length){
+			System.err.println("Disk : writeback data inconformity");
 		}
-		else return false;
+		int size=Math.min(newData.length, addresses.length);
+		
+		for(int i=0;i<size;i++){
+			if(dataTable.containsKey(addresses[i])){
+				dataTable.replace(addresses[i], newData[i]);
+			}else{
+				dataTable.put(addresses[i], newData[i]);
+			}
+		}
 	}
 }

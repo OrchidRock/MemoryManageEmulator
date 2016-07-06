@@ -1,7 +1,8 @@
 package inter;
 
-public class TLBPTE {
-	public int tag;
+public class TLBPTE{
+	public int tag=-1;
 	public boolean dirtybit=false;
-	
+	public boolean validbit=false;
+	public int pa=-1;
 }

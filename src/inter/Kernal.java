@@ -3,137 +3,250 @@ package inter;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Properties;
+import java.util.Random;
+import java.util.Set;
 
 import tool.ConfLoader;
 import tool.MappingLoader;
 import tool.ConfLoader.ConfType;
 
 public class Kernal {
-	
-	public final static int
-		RANDOM=0,FIFO=1,LRU=2;
-	public final static int 
-		Inverted=5,Traditional=6;
-	    
+	public final static int StackSize = (int) Math.pow(2, 5);
+	public final static int RANDOM = 0, FIFO = 1, LRU = 2;
+	public final static int Inverted = 5, Traditional = 6;
+	public final static int Global = 10, Local = 11;
+
 	private static Kernal kernal;
-	private Kernal(){}
-	
-	
-	public static int LABN=-1;
-	public static int PABN=-1;
-	public static int PtSizeOptimizePolicy=-1; //Page Table SizeOptimizePolicy
-	
-	
-	private Hashtable<Integer, PCB> pcbs=new Hashtable<>();// save  pcb for all process
-	private int PidMaxNumber=-1;
-	private int pidCurrentIndex=0;
-	
-	private Hashtable<Integer, ArrayList<Integer>> mappingtable=null; // local address ===> disk address
-	
-	private Integer currentProcessPid=-1; //
-	
-	private int replacePolicy=-1;
-	//allcote pcb number
-	public static int PageTableMaxNumber=-1;
-	
-	public static Kernal createNewInstance(){
-		if(kernal==null)
-			kernal=new Kernal();
-		//load conf
-		Properties properties=ConfLoader.getPropertiesByConfType(ConfType.Kernal);
-		LABN=Integer.valueOf(properties.getProperty("LABN"));
-		PABN=Integer.valueOf(properties.getProperty("PABN"));
-		
-		Properties properties_pt=ConfLoader.getPropertiesByConfType(ConfType.PageTable);
-		PtSizeOptimizePolicy=Integer.valueOf(properties_pt.getProperty("SizeOptimizePolicy"));
-		if(PtSizeOptimizePolicy==Kernal.Inverted)
-			PageTableMaxNumber=1;
+
+	private Kernal() {
+	}
+
+	public static int LABN = -1;
+	public static int PABN = -1;
+	public static int PtSizeOptimizePolicy = -1; // Page Table
+													// SizeOptimizePolicy
+
+	private Hashtable<Integer, PCB> pcbs = new Hashtable<>();// save pcb for all
+																// process
+	private int PidMaxNumber = -1;
+	private int pidCurrentIndex = 0;
+
+	private Hashtable<Integer, ArrayList<Integer>> mappingtable = null; // local
+																		// address
+																		// ===>
+																		// disk																	// address
+
+	private Integer currentProcessPid = -1; //
+
+	private int replacePolicy = -1;
+	private int replaceAlloctePolicy = -1;
+	// allcote pcb number
+	public static int PageTableMaxNumber = -1;
+
+	public static Kernal createNewInstance() {
+		if (kernal == null)
+			kernal = new Kernal();
+		// load conf
+		Properties properties = ConfLoader.getPropertiesByConfType(ConfType.Kernal);
+		LABN = Integer.valueOf(properties.getProperty("LABN"));
+		PABN = Integer.valueOf(properties.getProperty("PABN"));
+
+		Properties properties_pt = ConfLoader.getPropertiesByConfType(ConfType.PageTable);
+		PtSizeOptimizePolicy = Integer.valueOf(properties_pt.getProperty("SizeOptimizePolicy"));
+		if (PtSizeOptimizePolicy == Kernal.Inverted)
+			PageTableMaxNumber = 1;
 		else
-			PageTableMaxNumber=(int)Math.pow(2,PABN-5);
-		kernal.PidMaxNumber=(int)Math.pow(2,PABN-5);
-		
-		kernal.replacePolicy=kernal.getReplacePolicyTag(properties.getProperty("ReplacePolicy"));
+			PageTableMaxNumber = ((int) Math.pow(2, PABN)) / StackSize;
+		kernal.PidMaxNumber = ((int) Math.pow(2, PABN)) / StackSize - 1;
+
+		kernal.replacePolicy = kernal.getReplacePolicyTag(properties.getProperty("ReplacePolicy"));
+		kernal.replaceAlloctePolicy = kernal.getReplaceAllocateTag(properties.getProperty("ReplaceAllocatePolicy"));
 		return kernal;
 	}
-	public static Kernal getInstance(){
+
+	public static Kernal getInstance() {
 		return kernal;
 	}
-	public PCB allocatePCB(){
-		
-		int pid=getNextPid();
-		
-		if(PtSizeOptimizePolicy==Kernal.Inverted){
-			
-		}else{
-			
+
+	public PCB allocatePCB() {
+
+		int pid = getNextPid();
+		if (pid == -1) {
+			System.err.println("too many process,kernal can not allocate space!");
+			return null;
 		}
-		
-		/*PidMaxIndex++;
-		PageTableMaxIndex++;
-		PCB pcb=new PCB(PidMaxIndex,PageTableMaxIndex);
-		pcbs.put(new Integer(PidMaxIndex), pcb);
-		
-		PageTable pTable=new PageTable();
-		pTable.addNewPtAddress(PageTableMaxIndex);
-		
-		//Memory.getInstance().addPage(pTable,int index);
-*/		//return pcb;
-		return null;
+		int ptindex = -1;
+
+		if (PtSizeOptimizePolicy == Inverted) {
+			PageTable pagetable = (PageTable) Memory.getInstance().getPage(0);
+			if (pagetable == null) {
+				pagetable = new PageTable();
+				pagetable.addNewPtAddress(0);
+				Memory.getInstance().addPage(pagetable, 0);
+			}
+			ptindex = 0;
+		} else { // Tranditional
+			PageTable pageTable = null;
+			for (int i = 0; i < PageTableMaxNumber; i++) {
+				if (Memory.getInstance().getPage(i) == null) {
+					pageTable = new PageTable();
+					pageTable.addNewPtAddress(i);
+					Memory.getInstance().addPage(pageTable, i);
+					ptindex = i;
+					break;
+				}
+			}
+
+		}
+		if (ptindex == -1) {
+			System.err.println("too many process,kernal can not allocate space!");
+			return null;
+		}
+
+		PCB pcb = new PCB(pid, ptindex);
+		pcbs.put(new Integer(pid), pcb);
+		return pcb;
 	}
-	public void pagefaultExceptionRoutine(int pid,int localAddress){
-		currentProcessPid=pid;
-		
+
+	public int pagefaultExceptionRoutine(int pid, int la) {
+
 		// load mapping conf
+		if (mappingtable == null)
+			mappingtable = MappingLoader.loadMappingTable();
+
+		currentProcessPid = pid;
+		int result = -1;
+		// find sacrifice page
+		int pageindex = -1;
+		
+		if (replaceAlloctePolicy == Global) {
+			//if(replacePolicy==FIFO){}
+			int maxpa = (int) Math.pow(2, PABN) - 1;
+			int minpa = PidMaxNumber + 1;
+			pageindex = (int) Math.round(Math.random() * (maxpa - minpa) + minpa);
+		} else {
+			int minpa=PageTableMaxNumber+ pid*StackSize;
+			pageindex=(int) Math.round(Math.random() * (StackSize) + minpa);
+		}
+		result = pageindex;
+		ArrayList<Integer> dasList = mappingtable.get(new Integer(la));
+		if (dasList == null) {
+			System.err.println("kernal can not switch page to busy disk!");
+			return -1;
+		}
+		Integer[] das = (Integer[]) dasList.toArray();
+		NormalPage page = (NormalPage) Memory.getInstance().getPage(pageindex);
+		if (page == null) { // free
+			page = new NormalPage(null, das);
+			page.dirtyBit = false;
+			Memory.getInstance().addPage(page, pageindex);
+			result = pageindex;
+		} else {
+			if (page.dirtyBit) { // write to disk
+				Disk.getInstance().writeBack(page.getDiskAddress(), page.getData());
+				page.dirtyBit = false;
+			}
+			// update pde
+			if (page.freeBit) {
+				ArrayList<Integer> ptIndexList = page.getPtAddress();
+				for (int i = 0; i < ptIndexList.size(); i++) {
+					PageTable pageTable = (PageTable) Memory.getInstance().getPage(ptIndexList.get(i));
+					pageTable.IrefreshPagetable(pageindex);
+				}
+			}
+		}
+		page.addNewPtAddress(getCurrentProcessPtIndex());
+
+		// for other algorithm
+		page.referenceBit = true;
+		page.freeBit = false;
+		// load disk data
+		page.setData(Disk.getInstance().read(das));
+
+		return result;
+	}
+	public ArrayList<Integer> getAllDiskAddress(){
 		if(mappingtable==null)
 			mappingtable=MappingLoader.loadMappingTable();
-		// get replace physical number
-		//if drity to disk
-		
-		
+		Set<Integer> keys=mappingtable.keySet();
+		ArrayList<Integer> result=new ArrayList<>();
+		for(Integer key : keys){
+			ArrayList<Integer> value=mappingtable.get(key);
+			result.addAll(value);
+		}
+		return result;
 	}
-	private int getNextPid(){
-		for(int i=pidCurrentIndex ;i<PidMaxNumber;i++){ // first fit
-			if(pcbs.get(new Integer(i))==null){
-				pidCurrentIndex=i;
+	private int getNextPid() {
+		for (int i = pidCurrentIndex; i < PidMaxNumber; i++) { // first fit
+			if (pcbs.get(new Integer(i)) == null) {
+				pidCurrentIndex = i;
 				return i;
 			}
 		}
-		for(int i=1;i<pidCurrentIndex;i++){
-			if(pcbs.get(new Integer(i))==null){
-				pidCurrentIndex=i;
+		for (int i = 1; i < pidCurrentIndex; i++) {
+			if (pcbs.get(new Integer(i)) == null) {
+				pidCurrentIndex = i;
 				return i;
 			}
 		}
 		return -1;
 	}
-	@Deprecated
-	public Integer getCurrentProcessPid(){
-		return currentProcessPid;
+
+	private int getCurrentProcessPtIndex() {
+		PCB pcb = getPCBByPid(currentProcessPid);
+		return pcb.ptIndex;
 	}
-	public PCB getCurrentProcessPCB(){
+
+	@Deprecated
+	public PCB getCurrentProcessPCB() {
 		return pcbs.get(currentProcessPid);
 	}
-	@Deprecated
-	public PCB getPCBByPid(int pid){
+
+	public PCB getPCBByPid(int pid) {
 		return pcbs.get(new Integer(pid));
 	}
-	public void freePCBByPid(int pid){
-		pcbs.remove(new Integer(pid));
+
+	public void freePCBByPid(int pid) {
+		Integer key = new Integer(pid);
+		PCB pcb = pcbs.get(key);
+		PageTable pageTable = (PageTable) Memory.getInstance().getPage(pcb.ptIndex);
+		pageTable.freePage(pid);
+		if (replacePolicy == Traditional) {
+			Memory.getInstance().addPage(null, pcb.ptIndex);
+		}
+		pcbs.remove(key);
 	}
-	public static int getReplacePolicyTag(String policyname){
-		int tag=-1;
+
+	public static int getReplacePolicyTag(String policyname) {
+		int tag = -1;
 		switch (policyname) {
 		case "FIFO":
-			tag=FIFO;
+			tag = FIFO;
 			break;
 		case "LRU":
-			tag=LRU;
+			tag = LRU;
 			break;
 		case "RANDOM":
-			tag=RANDOM;
+			tag = RANDOM;
 			break;
 		default:
-			System.err.println("error data from ConfLoader.Kernal");
+			System.err.println("error data from ConfLoader.Kernal.ReplacePolicy");
+			break;
+		}
+		return tag;
+	}
+
+	private static int getReplaceAllocateTag(String name) {
+		int tag = -1;
+		switch (name) {
+		case "Global":
+			tag = Global;
+			break;
+		case "Local":
+			tag = Local;
+			break;
+		default:
+			System.err.println("error data from ConfLoader.Kernal.ReplaceAllocatePolicy");
 			break;
 		}
 		return tag;

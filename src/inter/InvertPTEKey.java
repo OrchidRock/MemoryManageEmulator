@@ -14,5 +14,7 @@ public class InvertPTEKey extends Key{
 	public int hashCode() {
 		return Objects.hash(pid,la);
 	}
-	
+	public int getPid(){
+		return pid;
+	}
 }
