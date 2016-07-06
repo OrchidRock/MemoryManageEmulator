@@ -18,10 +18,24 @@ public class Memory {
 	public static Memory getInstance(){
 		return memory;
 	}
-	public Page getPage(int index){
+	public Page getPage(int index) throws InterruptedException{
+		Thread.sleep(10);
 		return pages[index];
 	}
 	public void addPage(Page page,int index){
 		pages[index]=page;
+	}
+	public void setPageReferenceTimeByIndex(int index,long time){
+		NormalPage page=(NormalPage)pages[index];
+		if(page!=null){
+			page.setNewReferenceTime(time);
+		}
+	}
+	public long getPageReferenceTimeByIndex(int index){
+		NormalPage page=(NormalPage)pages[index];
+		if(page!=null){
+			return page.getNewReferenceTime();
+		}
+		return 0;
 	}
 }

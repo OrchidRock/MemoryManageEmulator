@@ -1,11 +1,14 @@
 package inter;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Set;
 
+import com.mysql.fabric.xmlrpc.base.Data;
+
+import algorithm.*;
 import tool.ConfLoader;
 import tool.MappingLoader;
 import tool.ConfLoader.ConfType;
@@ -34,11 +37,14 @@ public class Kernal {
 	private Hashtable<Integer, ArrayList<Integer>> mappingtable = null; // local
 																		// address
 																		// ===>
-																		// disk																	// address
+																		// disk
+																		// //
+																		// address
 
 	private Integer currentProcessPid = -1; //
 
-	private int replacePolicy = -1;
+	public int replacePolicy ;
+	private ReplaceAlgorithm replaceAlgorithm = null;
 	private int replaceAlloctePolicy = -1;
 	// allcote pcb number
 	public static int PageTableMaxNumber = -1;
@@ -52,7 +58,8 @@ public class Kernal {
 		PABN = Integer.valueOf(properties.getProperty("PABN"));
 
 		Properties properties_pt = ConfLoader.getPropertiesByConfType(ConfType.PageTable);
-		PtSizeOptimizePolicy = Integer.valueOf(properties_pt.getProperty("SizeOptimizePolicy"));
+		String pop = properties_pt.getProperty("SizeOptimizePolicy");
+		PtSizeOptimizePolicy = getSizeOptimizedPolicy(pop);
 		if (PtSizeOptimizePolicy == Kernal.Inverted)
 			PageTableMaxNumber = 1;
 		else
@@ -68,7 +75,7 @@ public class Kernal {
 		return kernal;
 	}
 
-	public PCB allocatePCB() {
+	public PCB allocatePCB() throws InterruptedException {
 
 		int pid = getNextPid();
 		if (pid == -1) {
@@ -108,7 +115,7 @@ public class Kernal {
 		return pcb;
 	}
 
-	public int pagefaultExceptionRoutine(int pid, int la) {
+	public int pagefaultExceptionRoutine(int pid, int la) throws InterruptedException {
 
 		// load mapping conf
 		if (mappingtable == null)
@@ -118,15 +125,14 @@ public class Kernal {
 		int result = -1;
 		// find sacrifice page
 		int pageindex = -1;
-		
 		if (replaceAlloctePolicy == Global) {
-			//if(replacePolicy==FIFO){}
 			int maxpa = (int) Math.pow(2, PABN) - 1;
 			int minpa = PidMaxNumber + 1;
-			pageindex = (int) Math.round(Math.random() * (maxpa - minpa) + minpa);
+			pageindex=replaceAlgorithm.newPageReference(minpa, maxpa);
 		} else {
-			int minpa=PageTableMaxNumber+ pid*StackSize;
-			pageindex=(int) Math.round(Math.random() * (StackSize) + minpa);
+			int minpa = PageTableMaxNumber + pid * StackSize;
+			int maxpa = minpa + StackSize - 1;
+			pageindex=replaceAlgorithm.newPageReference(minpa, maxpa);
 		}
 		result = pageindex;
 		ArrayList<Integer> dasList = mappingtable.get(new Integer(la));
@@ -134,7 +140,9 @@ public class Kernal {
 			System.err.println("kernal can not switch page to busy disk!");
 			return -1;
 		}
-		Integer[] das = (Integer[]) dasList.toArray();
+		Integer[] das = new Integer[dasList.size()];
+		for (int i = 0; i < das.length; i++)
+			das[i] = dasList.get(i);
 		NormalPage page = (NormalPage) Memory.getInstance().getPage(pageindex);
 		if (page == null) { // free
 			page = new NormalPage(null, das);
@@ -162,20 +170,22 @@ public class Kernal {
 		page.freeBit = false;
 		// load disk data
 		page.setData(Disk.getInstance().read(das));
-
+		page.setNewReferenceTime(new Date().getTime());
 		return result;
 	}
-	public ArrayList<Integer> getAllDiskAddress(){
-		if(mappingtable==null)
-			mappingtable=MappingLoader.loadMappingTable();
-		Set<Integer> keys=mappingtable.keySet();
-		ArrayList<Integer> result=new ArrayList<>();
-		for(Integer key : keys){
-			ArrayList<Integer> value=mappingtable.get(key);
+
+	public ArrayList<Integer> getAllDiskAddress() {
+		if (mappingtable == null)
+			mappingtable = MappingLoader.loadMappingTable();
+		Set<Integer> keys = mappingtable.keySet();
+		ArrayList<Integer> result = new ArrayList<>();
+		for (Integer key : keys) {
+			ArrayList<Integer> value = mappingtable.get(key);
 			result.addAll(value);
 		}
 		return result;
 	}
+
 	private int getNextPid() {
 		for (int i = pidCurrentIndex; i < PidMaxNumber; i++) { // first fit
 			if (pcbs.get(new Integer(i)) == null) {
@@ -206,7 +216,7 @@ public class Kernal {
 		return pcbs.get(new Integer(pid));
 	}
 
-	public void freePCBByPid(int pid) {
+	public void freePCBByPid(int pid) throws InterruptedException {
 		Integer key = new Integer(pid);
 		PCB pcb = pcbs.get(key);
 		PageTable pageTable = (PageTable) Memory.getInstance().getPage(pcb.ptIndex);
@@ -222,18 +232,38 @@ public class Kernal {
 		switch (policyname) {
 		case "FIFO":
 			tag = FIFO;
+			int num=(int)Math.pow(2, PABN)-kernal.PidMaxNumber-1;
+			kernal.replaceAlgorithm = new FIFO(num,kernal.PidMaxNumber-1);
 			break;
 		case "LRU":
 			tag = LRU;
+			kernal.replaceAlgorithm = new LRU();
 			break;
 		case "RANDOM":
 			tag = RANDOM;
+			kernal.replaceAlgorithm = new RANDOM();
 			break;
 		default:
 			System.err.println("error data from ConfLoader.Kernal.ReplacePolicy");
 			break;
 		}
 		return tag;
+	}
+
+	private static int getSizeOptimizedPolicy(String name) {
+		int r = -1;
+		switch (name) {
+		case "Inverted":
+			r = Inverted;
+			break;
+		case "Traditional":
+			r = Traditional;
+			break;
+		default:
+			System.err.println("Kernal.PageTable.conf has error data");
+			break;
+		}
+		return r;
 	}
 
 	private static int getReplaceAllocateTag(String name) {

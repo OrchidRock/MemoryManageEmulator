@@ -20,7 +20,7 @@ public class Disk {
 	private static int trackCount;
 	private static int sectorCount;
 	
-	private Hashtable<Integer,String>dataTable;
+	private Hashtable<Integer,String>dataTable=new Hashtable<>();
 	
 	
 	private static Disk disk;
@@ -48,6 +48,7 @@ public class Disk {
 			int index=0;
 			while(index<mapping.size() && (line=reader.readLine())!=null){
 				disk.dataTable.put(mapping.get(index), line);
+				index++;
 			}
 			reader.close();
 		} catch (IOException e) {
@@ -66,7 +67,8 @@ public class Disk {
 		System.out.println(imfor);
 		
 	}	
-	public String[] read(Integer[] addresses){
+	public String[] read(Integer[] addresses) throws InterruptedException{
+		Thread.sleep(1000);
 		ArrayList<String> blocks=new ArrayList<>();
 		for(int i=0;i<addresses.length;i++){
 			if(dataTable.containsKey(addresses[i])){
@@ -76,8 +78,10 @@ public class Disk {
 				System.err.println("Disk.address : "+i+" is a empty block");
 			}
 		}
-		
-		return (String[])blocks.toArray();
+		String[] data=new String[blocks.size()];
+		for(int i=0;i<data.length;i++)
+			data[i]=blocks.get(i);
+		return data;
 	}
 	public void writeBack(Integer[] addresses,String[] newData){
 		if(dataTable==null)

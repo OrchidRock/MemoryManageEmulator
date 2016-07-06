@@ -1,7 +1,7 @@
 package inter;
 
 import java.util.Properties;
-
+import java.util.concurrent.locks.ReentrantLock;
 
 import tool.ConfLoader;
 import tool.ConfLoader.ConfType;
@@ -13,6 +13,10 @@ public class TLB {
 	private int degreeAssociative=-1;
 	private int setNumber=-1;
 	private TLBPTE[] ptes=null;
+	
+	private int accessCount=0;
+	private int hitcount=0;
+	private ReentrantLock lock=new ReentrantLock();
 	
 	
 	private static TLB tlb;
@@ -40,7 +44,11 @@ public class TLB {
 	public static TLB getInstance(){
 		return tlb;
 	}
-	public int searchTLB(int la){
+	public int searchTLB(int la) throws InterruptedException{
+		Thread.sleep(1);
+		
+		lock.lock();
+		accessCount++;
 		int result=-1;
 		int TLBI=la%setNumber;
 		int TLBT=la/setNumber;
@@ -50,16 +58,24 @@ public class TLB {
 			TLBPTE tlbpte=ptes[i];
 			if(tlbpte.validbit && tlbpte.tag==TLBT){
 				result=tlbpte.pa;
+				hitcount++;
 				break;
 			}
 		}
+		lock.unlock();
 		return result;
+	}
+	public double getMissRate(){
+		lock.lock();
+		Double rate=(double)(accessCount-hitcount)/(double)accessCount;
+		lock.unlock();
+		return rate;
 	}
 	private int getReplaceLocation(int tlbi){
 		int minpa = tlbi*degreeAssociative;
-		return (int) Math.round(Math.random() * (degreeAssociative) + minpa);
+		return (int) Math.round(Math.random() * (degreeAssociative-1) + minpa);
 	}
-	public void update(int pid, int va, int pa) {
+	public void update(int pid, int va, int pa) throws InterruptedException {
 		int TLBI=va%setNumber;
 		int next=getReplaceLocation(TLBI);
 		TLBPTE tlbpte=ptes[next];

@@ -3,6 +3,7 @@ package inter;
 public class NormalPage extends Page{
 	private String[] blocks;
 	private Integer[] diskAddress;
+	private long referencetime=-1;
 	public NormalPage(String[] data,Integer[] da){
 		this.blocks=data;
 		this.diskAddress=da;
@@ -22,5 +23,11 @@ public class NormalPage extends Page{
 			result+=blocks[i];
 		}
 		return result;
+	}
+	public void setNewReferenceTime(long time){
+		referencetime=time;
+	}
+	public long getNewReferenceTime(){
+		return referencetime;
 	}
 }

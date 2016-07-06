@@ -67,7 +67,7 @@ public class PageTable extends Page {
 
 	}
 
-	public void freePage(int pid) {
+	public void freePage(int pid) throws InterruptedException {
 		Set<Key> keys = ptes.keySet();
 		if (Kernal.PtSizeOptimizePolicy == Kernal.Inverted) {
 			for(Key key : keys){
