@@ -24,15 +24,18 @@ public class Main {
 
 		try {// create new process
 			// process 1
-			Runnable process1Handle;
+			Process process1Handle;
 			process1Handle = new Process();
-			Thread process1 = new Thread(process1Handle);
+			for(int i=0;i<20;i++){
+				process1Handle.issueOneInstruct();
+			}
+			//Thread process1 = new Thread(process1Handle);
 
 			//
-			Runnable process2Handle = new Process();
-			Thread process2 = new Thread(process2Handle);
-			process2.start();
-			process1.start();
+			Process process2Handle = new Process();
+			//Thread process2 = new Thread(process2Handle);
+			//process2.start();
+			//process1.start();
 			
 			//System.out.println("TLB miss rate:"+TLB.getInstance().getMissRate());
 		//	System.out.println("Page Fault rate :"+MMU.getInstance().getPageFaultRate());

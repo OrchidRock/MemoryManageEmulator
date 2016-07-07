@@ -17,6 +17,12 @@ public class Process implements Runnable{
 		accessTable=AccessTableLoader.loadAccessTableByPid(pcb.pid+1);
 	   // arrivetime=new Date();
 	}
+	public void issueOneInstruct(){
+		Instruct instruct=new Instruct(pcb.pid, PC, accessTable.get(PC));
+		instruct.arivetime=new Date().getTime();
+		Processer.getInsatnce().exceOneInstruct(instruct);
+		PC++;
+	}
 	@Override
 	public void run() {
 		while(PC<accessTable.size()){
