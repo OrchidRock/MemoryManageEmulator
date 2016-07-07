@@ -40,10 +40,9 @@ public class MainTest implements ProcessExeOneInstruct{
 			// create process
 			for (int i = 0; i < processCount; i++) {
 				processes[i] = new Process();
-			//	Thread thread=new Thread(processes[i]);
-				//thread.start();
+				//Thread thread=new Thread(processes[i]);
+				///thread.start();
 			}
-			
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

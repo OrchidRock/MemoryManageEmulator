@@ -58,8 +58,8 @@ public class Processer implements Runnable {
 				if(Window.getInstance()!=null)
 					Window.getInstance().processerAddFinishedInstruct(instruct.toString());
 				instructresult.put(instruct);
-		//		System.out.println(instruct);
-				if (count >= 50) {
+				System.out.println(instruct);
+				if (count >= 20) {
 					System.err.println("TLB miss rate:" + TLB.getInstance().getMissRate());
 					System.err.println("Page Fault rate :" + MMU.getInstance().getPageFaultRate());
 					count = 0;

@@ -1,7 +1,9 @@
 package gui;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.EventQueue;
+import java.awt.Rectangle;
 
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
@@ -10,9 +12,11 @@ import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JScrollPane;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollBar;
 import javax.swing.SwingConstants;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -56,12 +60,13 @@ public class Window {
 	private JButton allbutton;
 	private int currentProcessIndex = -1;
 
+	private JScrollPane processerscrollPane;
 	// connect Main
 	private ProcessExeOneInstruct processExeOneInstruct;
 
-	//for pagetable
-	private Hashtable<String, Integer> pagetableindex=new Hashtable<>();
-	private Hashtable<Integer, Integer> memoryindex=new Hashtable<>();
+	// for pagetable
+	private Hashtable<String, Integer> pagetableindex = new Hashtable<>();
+	private Hashtable<Integer, Integer> memoryindex = new Hashtable<>();
 	private static Window window;
 	private JLabel lblMode;
 
@@ -103,13 +108,13 @@ public class Window {
 		frame.getContentPane().add(Processerpanel);
 		Processerpanel.setLayout(null);
 
-		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(12, 25, 282, 508);
+		processerscrollPane = new JScrollPane();
+		processerscrollPane.setBounds(12, 25, 282, 508);
 		processerU = new DefaultTableModel(new Object[][] {},
 				new String[] { "PID", "PC", "LA", "wait time", "run time" });
 		processerT.setModel(processerU);
-		scrollPane.setViewportView(processerT);
-		Processerpanel.add(scrollPane);
+		processerscrollPane.setViewportView(processerT);
+		Processerpanel.add(processerscrollPane);
 
 		TLBpanel = new JPanel();
 		TLBpanel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "TLB", TitledBorder.LEADING,
@@ -121,7 +126,7 @@ public class Window {
 		TLBscrollPane.setBounds(12, 30, 326, 117);
 		TLBpanel.add(TLBscrollPane);
 		tlbT = new JTable();
-		tlbU = new DefaultTableModel(new Object[][] {}, new String[] {"I","TAG", "PPN", "Dirty", "valid" });
+		tlbU = new DefaultTableModel(new Object[][] {}, new String[] { "I", "TAG", "PPN", "Dirty", "valid" });
 		//
 		// this.initTLB(TLBs);
 		//
@@ -248,13 +253,12 @@ public class Window {
 		buttonpanel.add(allbutton);
 		onebutton.setEnabled(false);
 		allbutton.setEnabled(false);
-		
-		
+
 		onebutton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				onebutton.setEnabled(false);
-				processExeOneInstruct.ProcessExeInstruct(currentProcessIndex,false);
+				processExeOneInstruct.ProcessExeInstruct(currentProcessIndex, false);
 				onebutton.setEnabled(true);
 			}
 		});
@@ -266,13 +270,13 @@ public class Window {
 				if (currentProcessIndex == -1) {
 					processExeOneInstruct.ProcessExeInstruct(0, true);
 				} else {
-					while (processExeOneInstruct.ProcessExeInstruct(currentProcessIndex,false))
+					while (processExeOneInstruct.ProcessExeInstruct(currentProcessIndex, false))
 						;
 				}
-				//allbutton.setEnabled(true);
+				// allbutton.setEnabled(true);
 			}
 		});
-
+		//makeFace(tlbT);
 	}
 
 	private void processsAddActionListener(JRadioButton process, int i) {
@@ -287,7 +291,7 @@ public class Window {
 	}
 
 	public interface ProcessExeOneInstruct {
-		boolean ProcessExeInstruct(int processindex,boolean isallprocess);
+		boolean ProcessExeInstruct(int processindex, boolean isallprocess);
 	}
 
 	public void initPagetablePolicy(boolean isInverted) {
@@ -313,20 +317,22 @@ public class Window {
 			diskU.addRow(object);
 		}
 	}
-	public void processSwitch(){
-		int last=tlbU.findColumn("valid");
-		Object object=new String("false");
-		for(int i=0;i<tlbU.getRowCount();i++){
+
+	public void processSwitch() {
+		int last = tlbU.findColumn("valid");
+		Object object = new String("false");
+		for (int i = 0; i < tlbU.getRowCount(); i++) {
 			tlbU.setValueAt(object, i, last);
 		}
 	}
+
 	public void initTLBunits(ArrayList<String> TLBs) {
 		Object[] object = new Object[5];
 		for (int i = 0; i < TLBs.size(); i++) {
-			int k=0;
-			object[k++]=new String(Integer.toString(i));
+			int k = 0;
+			object[k++] = new String(Integer.toString(i));
 			String targets[] = TLBs.get(i).split("&");
-			for (int j=0; j < targets.length; j++,k++) {
+			for (int j = 0; j < targets.length; j++, k++) {
 				object[k] = targets[j];
 			}
 			tlbU.addRow(object);
@@ -339,67 +345,120 @@ public class Window {
 		for (int i = 0; i < objects.length; i++)
 			objects[i] = infos[i];
 		processerU.addRow(objects);
+		jTableMoveToRow(processerT, processerT.getRowCount() - 1);
+		/*
+		 * int rowCount=processerT.getRowCount();
+		 * processerT.getSelectionModel().setSelectionInterval(rowCount-1,
+		 * rowCount-1); Rectangle rect = processerT.getCellRect(rowCount-1, 0,
+		 * true); processerT.scrollRectToVisible(rect);
+		 */
+
+		// JScrollBar bar=processerscrollPane.getVerticalScrollBar();
+		// bar.setValue(bar.getMaximum()+1);
 	}
-	
-	public void memoryPageAdd(String newpage){
-		String[] infos=newpage.split("&");
+
+	public void memoryPageAdd(String newpage) {
+		String[] infos = newpage.split("&");
 		Object[] objects = new Object[infos.length];// traditional
 		for (int i = 0; i < objects.length; i++) {
 			objects[i] = infos[i];
 		}
 		memoryU.addRow(objects);
-		int key=Integer.valueOf(infos[0]);
-		memoryindex.put(key, memoryU.getRowCount()-1);
+		int key = Integer.valueOf(infos[0]);
+		memoryindex.put(key, memoryU.getRowCount() - 1);
+		jTableMoveToRow(memoryT, memoryT.getRowCount() - 1);
 	}
-	public void memoryPageUpdate(String page){
-		String[] infos=page.split("&");
-		Object[] objects = new Object[infos.length];// traditional
-		for (int i = 0; i < objects.length; i++) {
-			objects[i] = infos[i];
+
+	public void memoryPageUpdate(String page) {
+		String[] infos = page.split("&");
+		int key = Integer.valueOf(infos[0]);
+		int index = memoryindex.get(key);
+		for (int i = 0; i < infos.length; i++) {
+			Object object = infos[i];
+			memoryU.setValueAt(object, index, i);
 		}
-		int key=Integer.valueOf(infos[0]);
-		int index=memoryindex.get(key);
-		memoryU.insertRow(index, objects);
+		jTableMoveToRow(memoryT, index);
 	}
-	public void pageTableadd(int keyindex,String target) {
-		String key="";
-		String[] targets=target.split("&");
-		for(int i=0;i<keyindex;i++){
-			key=key+targets[i];
+
+	public void pageTableadd(int keyindex, String target) {
+		String key = "";
+		String[] targets = target.split("&");
+		for (int i = 0; i < keyindex; i++) {
+			key = key + targets[i];
 		}
 		Object[] objects = new Object[targets.length];// traditional
 		for (int i = 0; i < objects.length; i++) {
 			objects[i] = targets[i];
 		}
 		pagetableU.addRow(objects);
-		pagetableindex.put(key, pagetableU.getRowCount()-1);
+		pagetableindex.put(key, pagetableU.getRowCount() - 1);
+		jTableMoveToRow(pagetableT, pagetableT.getRowCount() - 1);
+		/*
+		 * int rowCount=processerT.getRowCount();
+		 * processerT.getSelectionModel().setSelectionInterval(rowCount-1,
+		 * rowCount-1); Rectangle rect = processerT.getCellRect(rowCount-1, 0,
+		 * true); processerT.scrollRectToVisible(rect);
+		 */
 	}
-	public void clearPageTableAndReInit(int keyindex,ArrayList<String> ptptes){
-		int rowcount=pagetableU.getRowCount();
-		for(int i=0;i<rowcount;i++)
+
+	public void clearPageTableAndReInit(int keyindex, ArrayList<String> ptptes) {
+		int rowcount = pagetableU.getRowCount();
+		for (int i = 0; i < rowcount; i++)
 			pagetableU.removeRow(0);
-		for(int i=0;i<ptptes.size();i++){
-			pageTableadd(keyindex,ptptes.get(i));
+		for (int i = 0; i < ptptes.size(); i++) {
+			pageTableadd(keyindex, ptptes.get(i));
 		}
 	}
-	public void pagetableUpdate(int keyindex,String target) {
-		String key="";
-		String[] targets=target.split("&");
-		for(int i=0;i<keyindex;i++){
-			key=key+targets[i];
+
+	public void pagetableUpdate(int keyindex, String target) {
+		String key = "";
+		String[] targets = target.split("&");
+		for (int i = 0; i < keyindex; i++) {
+			key = key + targets[i];
 		}
-		int index=pagetableindex.get(key);
-		for(int i=0;i<targets.length;i++){
-			Object object=new String(targets[i]);
+		int index = pagetableindex.get(key);
+		for (int i = 0; i < targets.length; i++) {
+			Object object = new String(targets[i]);
 			tlbU.setValueAt(object, index, i);
 		}
+		jTableMoveToRow(pagetableT, index);
 	}
-	public void TLBUpdate(int index,String target){
-		int j=1;
-		String[] targets=target.split("&");
-		for(int i=0;i<targets.length;i++,j++){
-			Object object=new String(targets[i]);
+
+	public void TLBUpdate(int index, String target) {
+		int j = 1;
+		String[] targets = target.split("&");
+		for (int i = 0; i < targets.length; i++, j++) {
+			Object object = new String(targets[i]);
 			tlbU.setValueAt(object, index, j);
 		}
+		jTableMoveToRow(tlbT, index);
 	}
+
+	private void jTableMoveToRow(JTable table, int index) {
+		table.getSelectionModel().setSelectionInterval(index, index);
+		Rectangle rect = table.getCellRect(index, 0, true);
+		table.scrollRectToVisible(rect);
+	}
+	private void makeFace(JTable table){
+		DefaultTableCellRenderer tcr=new DefaultTableCellRenderer(){
+			 public Component getTableCellRendererComponent(JTable table,  
+                     Object value, boolean isSelected, boolean hasFocus,  
+                     int row, int column) {  
+                 if (row % 2 == 0) {  
+                     setBackground(Color.white); //设置奇数行底色  
+                 } else if (row % 2 == 1) {  
+                     setBackground(new Color(206, 231, 255)); //设置偶数行底色  
+                 }  
+                 if (Double.parseDouble(table.getValueAt(row, 11).toString()) > 0) {  
+                     setBackground(Color.red);  
+                 }                   //如果需要设置某一个Cell颜色，需要加上column过滤条件即可  
+                 return super.getTableCellRendererComponent(table, value,  
+                         isSelected, hasFocus, row, column);  
+             }  
+         };  
+         for (int i = 0; i < table.getColumnCount(); i++) {  
+             table.getColumn(table.getColumnName(i)).setCellRenderer(tcr);  
+         }  
+		}
+	
 }
