@@ -1,20 +1,14 @@
 package inter;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
-
-import tool.AccessTableLoader;
 
 public class Processer implements Runnable {
 
 	private BlockingQueue<Instruct> instructQueue = new ArrayBlockingQueue<>(100);
 	private BlockingQueue<Instruct> instructresult = new ArrayBlockingQueue<>(100);
 
-	private Date arrivetime = null;
 	public static final int READ = 0, WRITE = 1;
 
 	private static Processer processer;
@@ -34,7 +28,7 @@ public class Processer implements Runnable {
 
 	@Override
 	public void run() {
-		int count=0;
+		int count = 0;
 		try {
 			while (true) {
 				Instruct instruct = instructQueue.take();
@@ -46,10 +40,10 @@ public class Processer implements Runnable {
 				instruct.exetime = finishtime - pretime;
 				instructresult.put(instruct);
 				System.out.println(instruct);
-				if(count>=50){
-					System.err.println("TLB miss rate:"+TLB.getInstance().getMissRate());
-					System.err.println("Page Fault rate :"+MMU.getInstance().getPageFaultRate());
-					count=0;
+				if (count >= 50) {
+					System.err.println("TLB miss rate:" + TLB.getInstance().getMissRate());
+					System.err.println("Page Fault rate :" + MMU.getInstance().getPageFaultRate());
+					count = 0;
 				}
 			}
 
@@ -58,9 +52,11 @@ public class Processer implements Runnable {
 			e.printStackTrace();
 		}
 	}
-	public Instruct getOneInstructResult() throws InterruptedException{
+
+	public Instruct getOneInstructResult() throws InterruptedException {
 		return instructresult.take();
 	}
+
 	public void exceOneInstruct(Instruct instruct) {
 		try {
 			instructQueue.put(instruct);

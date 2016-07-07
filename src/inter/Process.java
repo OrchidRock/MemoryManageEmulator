@@ -8,9 +8,6 @@ import tool.AccessTableLoader;
 public class Process implements Runnable{
 	private PCB pcb=null;
 	private ArrayList<Integer> accessTable=null;
-	private ArrayList<Float>exetimeTable=new ArrayList<>();
-	private ArrayList<Float>waittimeTable=new ArrayList<>();
-	
 	
 	private int PC=0;
 	public Process() throws InterruptedException {
@@ -30,6 +27,12 @@ public class Process implements Runnable{
 		}
 		/*System.err.println("TLB miss rate:"+TLB.getInstance().getMissRate());
 		System.err.println("Page Fault rate :"+MMU.getInstance().getPageFaultRate());*/
+		/*try {
+			Kernal.getInstance().freePCBByPid(pcb.pid);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
 	}
 	
 }

@@ -5,4 +5,5 @@ public class TLBPTE{
 	public boolean dirtybit=false;
 	public boolean validbit=false;
 	public int pa=-1;
+	public long referencetime=-1;
 }

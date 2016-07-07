@@ -2,7 +2,7 @@ package algorithm;
 
 
 import inter.Memory;
-import sun.util.logging.resources.logging;
+import inter.TLB;
 
 public class FIFO extends ReplaceAlgorithm{
 	/*private  int head;
@@ -19,12 +19,17 @@ public class FIFO extends ReplaceAlgorithm{
 		queue=new int[num];
 		this.offset=offset;*/
 	}
+	public FIFO(){}
 	@Override
-	public int newPageReference(int startpn,int endpn){
+	public int newPageReference(int startpn,int endpn,int type){
 		int result=-1;
 		long mintime=Long.MAX_VALUE;
 		for(int i=startpn;i<endpn;i++){
-			long time=Memory.getInstance().getPageReferenceTimeByIndex(i);
+			long time=-1;
+			if(type==MEMORY)
+				time=Memory.getInstance().getPageReferenceTimeByIndex(i);
+			else
+				time=TLB.getInstance().getPageReferenceTimeByIndex(i);
 			if(time==0){ //null
 				result= i;
 				break;

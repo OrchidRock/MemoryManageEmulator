@@ -1,4 +1,4 @@
-package inter;
+package algorithm;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

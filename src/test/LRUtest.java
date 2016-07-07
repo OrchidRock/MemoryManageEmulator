@@ -1,4 +1,5 @@
 package test;
+import algorithm.LRUlist;
 import inter.*;
 
 public class LRUtest {

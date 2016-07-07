@@ -1,8 +1,13 @@
 package inter;
 
+import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
+import algorithm.FIFO;
+import algorithm.LRU;
+import algorithm.RANDOM;
+import algorithm.ReplaceAlgorithm;
 import tool.ConfLoader;
 import tool.ConfLoader.ConfType;
 
@@ -14,6 +19,7 @@ public class TLB {
 	private int setNumber=-1;
 	private TLBPTE[] ptes=null;
 	
+	private ReplaceAlgorithm replaceAlgorithm=null;
 	private int accessCount=0;
 	private int hitcount=0;
 	private ReentrantLock lock=new ReentrantLock();
@@ -37,7 +43,21 @@ public class TLB {
 			TLBPTE tlbpte=new TLBPTE();
 			tlbpte.dirtybit=false;
 			tlbpte.validbit=false;
+			tlbpte.referencetime=new Date().getTime();
 			tlb.ptes[i]=tlbpte;
+		}
+		switch (tlb.replacePolicy) {
+		case Kernal.FIFO:
+			tlb.replaceAlgorithm=new FIFO();
+			break;
+		case Kernal.LRU:
+			tlb.replaceAlgorithm=new LRU();
+			break;
+		case Kernal.RANDOM:
+			tlb.replaceAlgorithm=new RANDOM();
+			break;
+		default:
+			break;
 		}
 		return tlb;
 	}
@@ -59,6 +79,9 @@ public class TLB {
 			if(tlbpte.validbit && tlbpte.tag==TLBT){
 				result=tlbpte.pa;
 				hitcount++;
+				if(replacePolicy==Kernal.LRU){
+					tlbpte.referencetime=new Date().getTime();
+				}
 				break;
 			}
 		}
@@ -72,8 +95,10 @@ public class TLB {
 		return rate;
 	}
 	private int getReplaceLocation(int tlbi){
+		
 		int minpa = tlbi*degreeAssociative;
-		return (int) Math.round(Math.random() * (degreeAssociative-1) + minpa);
+		int maxpa=minpa+degreeAssociative-1;
+		return replaceAlgorithm.newPageReference(minpa, maxpa,ReplaceAlgorithm.Tlb);
 	}
 	public void update(int pid, int va, int pa) throws InterruptedException {
 		int TLBI=va%setNumber;
@@ -90,5 +115,9 @@ public class TLB {
 			tlbpte.validbit=true;
 			tlbpte.dirtybit=true;
 		}
+		tlbpte.referencetime=new Date().getTime();
+	}
+	public long getPageReferenceTimeByIndex(int index){
+		return ptes[index].referencetime;
 	}
 }

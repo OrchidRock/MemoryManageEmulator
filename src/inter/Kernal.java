@@ -6,12 +6,12 @@ import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Set;
 
-import com.mysql.fabric.xmlrpc.base.Data;
 
 import algorithm.*;
 import tool.ConfLoader;
 import tool.MappingLoader;
 import tool.ConfLoader.ConfType;
+
 
 public class Kernal {
 	public final static int StackSize = (int) Math.pow(2, 5);
@@ -128,11 +128,11 @@ public class Kernal {
 		if (replaceAlloctePolicy == Global) {
 			int maxpa = (int) Math.pow(2, PABN) - 1;
 			int minpa = PidMaxNumber + 1;
-			pageindex=replaceAlgorithm.newPageReference(minpa, maxpa);
+			pageindex=replaceAlgorithm.newPageReference(minpa, maxpa,ReplaceAlgorithm.MEMORY);
 		} else {
 			int minpa = PageTableMaxNumber + pid * StackSize;
 			int maxpa = minpa + StackSize - 1;
-			pageindex=replaceAlgorithm.newPageReference(minpa, maxpa);
+			pageindex=replaceAlgorithm.newPageReference(minpa, maxpa,ReplaceAlgorithm.MEMORY);
 		}
 		result = pageindex;
 		ArrayList<Integer> dasList = mappingtable.get(new Integer(la));
