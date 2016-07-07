@@ -12,5 +12,12 @@ public class TrditionalPTEKey extends Key {
 	public int hashCode() {
 		return Objects.hashCode(la);
 	}
-
+	public String toString(){
+		return ""+la;
+	}
+	@Override
+	public boolean equals(Object otherobject) {
+		
+		return false;
+	}
 }

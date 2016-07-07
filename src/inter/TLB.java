@@ -1,5 +1,6 @@
 package inter;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
@@ -8,6 +9,7 @@ import algorithm.FIFO;
 import algorithm.LRU;
 import algorithm.RANDOM;
 import algorithm.ReplaceAlgorithm;
+import gui.Window;
 import tool.ConfLoader;
 import tool.ConfLoader.ConfType;
 
@@ -39,12 +41,15 @@ public class TLB {
 			System.err.println("conf.tlb has error data");
 		tlb.setNumber=tlb.PTECount/tlb.degreeAssociative;
 		tlb.ptes=new TLBPTE[tlb.PTECount];
+		
+		ArrayList<String> infos=new ArrayList<>();
 		for(int i=0;i<tlb.PTECount;i++){
 			TLBPTE tlbpte=new TLBPTE();
 			tlbpte.dirtybit=false;
 			tlbpte.validbit=false;
 			tlbpte.referencetime=new Date().getTime();
-			tlb.ptes[i]=tlbpte;
+			tlb.ptes[i]=tlbpte;			
+			infos.add(tlbpte.toString());
 		}
 		switch (tlb.replacePolicy) {
 		case Kernal.FIFO:
@@ -59,6 +64,8 @@ public class TLB {
 		default:
 			break;
 		}
+		if(Window.getInstance()!=null)
+			Window.getInstance().initTLBunits(infos);
 		return tlb;
 	}
 	public static TLB getInstance(){
@@ -100,15 +107,27 @@ public class TLB {
 		int maxpa=minpa+degreeAssociative-1;
 		return replaceAlgorithm.newPageReference(minpa, maxpa,ReplaceAlgorithm.Tlb);
 	}
+	public void setAllPTEValid(){
+	//	ArrayList<String> infos=new ArrayList<>();
+		for(int i=0;i<ptes.length;i++){
+			ptes[i].validbit=false;
+			//infos.add(ptes[i].toString());
+		}
+		if(Window.getInstance()!=null){
+			Window.getInstance().processSwitch();
+		}
+	}
 	public void update(int pid, int va, int pa) throws InterruptedException {
 		int TLBI=va%setNumber;
 		int next=getReplaceLocation(TLBI);
 		TLBPTE tlbpte=ptes[next];
-		if(tlbpte.dirtybit){
+		if(tlbpte.dirtybit && tlbpte.validbit){
 			int ptindex=(Kernal.getInstance().getPCBByPid(pid)).ptIndex;
 			PageTable pageTable=(PageTable)Memory.getInstance().getPage(ptindex);
-			pageTable.DrefreshPagetable(pid, va, pa);
+			pageTable.DrefreshPagetable(pid, tlbpte.tag*setNumber, tlbpte.pa);
 			tlbpte.dirtybit=false;
+			tlbpte.tag=va/setNumber;
+			tlbpte.pa=pa;
 		}else{
 			tlbpte.pa=pa;
 			tlbpte.tag=va/setNumber;
@@ -116,6 +135,8 @@ public class TLB {
 			tlbpte.dirtybit=true;
 		}
 		tlbpte.referencetime=new Date().getTime();
+		if(Window.getInstance()!=null)
+			Window.getInstance().TLBUpdate(next, tlbpte.toString());
 	}
 	public long getPageReferenceTimeByIndex(int index){
 		return ptes[index].referencetime;

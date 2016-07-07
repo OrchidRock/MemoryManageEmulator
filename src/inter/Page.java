@@ -18,5 +18,7 @@ public class Page {
 	public ArrayList<Integer> getPtAddress(){
 		return ptKey;
 	}
-	//public String toString(){}
+	public String toString(){
+		return dirtyBit+"&"+freeBit;
+	}
 }

@@ -8,6 +8,7 @@ import java.util.Set;
 
 
 import algorithm.*;
+import gui.Window;
 import tool.ConfLoader;
 import tool.MappingLoader;
 import tool.ConfLoader.ConfType;
@@ -15,8 +16,8 @@ import tool.ConfLoader.ConfType;
 
 public class Kernal {
 	public final static int StackSize = (int) Math.pow(2, 5);
-	public final static int RANDOM = 0, FIFO = 1, LRU = 2;
-	public final static int Inverted = 5, Traditional = 6;
+	public final static int RANDOM = 100, FIFO = 101, LRU = 102;
+	public final static int Inverted = 2, Traditional = 1;
 	public final static int Global = 10, Local = 11;
 
 	private static Kernal kernal;
@@ -32,7 +33,7 @@ public class Kernal {
 	private Hashtable<Integer, PCB> pcbs = new Hashtable<>();// save pcb for all
 																// process
 	private int PidMaxNumber = -1;
-	private int pidCurrentIndex = 0;
+	private int pidCurrentIndex = 1;
 
 	private Hashtable<Integer, ArrayList<Integer>> mappingtable = null; // local
 																		// address
@@ -60,10 +61,16 @@ public class Kernal {
 		Properties properties_pt = ConfLoader.getPropertiesByConfType(ConfType.PageTable);
 		String pop = properties_pt.getProperty("SizeOptimizePolicy");
 		PtSizeOptimizePolicy = getSizeOptimizedPolicy(pop);
-		if (PtSizeOptimizePolicy == Kernal.Inverted)
+		if (PtSizeOptimizePolicy == Kernal.Inverted){
 			PageTableMaxNumber = 1;
-		else
+			if(Window.getInstance()!=null)
+				Window.getInstance().initPagetablePolicy(true);
+		}
+		else{
 			PageTableMaxNumber = ((int) Math.pow(2, PABN)) / StackSize;
+			if(Window.getInstance()!=null)
+				Window.getInstance().initPagetablePolicy(false);
+		}
 		kernal.PidMaxNumber = ((int) Math.pow(2, PABN)) / StackSize - 1;
 
 		kernal.replacePolicy = kernal.getReplacePolicyTag(properties.getProperty("ReplacePolicy"));
@@ -144,11 +151,13 @@ public class Kernal {
 		for (int i = 0; i < das.length; i++)
 			das[i] = dasList.get(i);
 		NormalPage page = (NormalPage) Memory.getInstance().getPage(pageindex);
+		boolean pageiSnull=false;
 		if (page == null) { // free
 			page = new NormalPage(null, das);
 			page.dirtyBit = false;
 			Memory.getInstance().addPage(page, pageindex);
 			result = pageindex;
+			pageiSnull=true;
 		} else {
 			if (page.dirtyBit) { // write to disk
 				Disk.getInstance().writeBack(page.getDiskAddress(), page.getData());
@@ -171,6 +180,12 @@ public class Kernal {
 		// load disk data
 		page.setData(Disk.getInstance().read(das));
 		page.setNewReferenceTime(new Date().getTime());
+		if(Window.getInstance()!=null){
+			if(pageiSnull)
+				Window.getInstance().memoryPageAdd(pageindex+"&"+page.toString());
+			else 
+				Window.getInstance().memoryPageUpdate(pageindex+"&"+page.toString());
+		}
 		return result;
 	}
 

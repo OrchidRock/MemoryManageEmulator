@@ -2,6 +2,8 @@ package inter;
 
 import java.util.ArrayList;
 
+import gui.Window;
+
 public class Memory {
 	
 	private Page[] pages=null;

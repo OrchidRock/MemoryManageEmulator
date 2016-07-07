@@ -10,7 +10,7 @@ import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Scanner;
 
-
+import gui.Window;
 import tool.ConfLoader;
 import tool.ConfLoader.ConfType;
 public class Disk {
@@ -31,8 +31,7 @@ public class Disk {
 			disk=new Disk();
 		//loadConf
 		Properties p=ConfLoader.getPropertiesByConfType(ConfType.Disk);
-		String platterCountS=p.getProperty("PlatterCount");
-		platterCount=Integer.valueOf(platterCountS);
+		platterCount=Integer.valueOf(p.getProperty("PlatterCount"));
 		trackCount=Integer.valueOf(p.getProperty("TrackCount"));
 		sectorCount=Integer.valueOf(p.getProperty("SectionCount"));
 		
@@ -41,13 +40,18 @@ public class Disk {
 	    return disk;
 	}
 	private static void loadTestText(){
+		ArrayList<String> infos=new ArrayList<>();
 		try {
 			BufferedReader reader=new BufferedReader(new FileReader(path));
 			String line;
 			ArrayList<Integer> mapping=Kernal.getInstance().getAllDiskAddress();
 			int index=0;
 			while(index<mapping.size() && (line=reader.readLine())!=null){
+				String info="";
 				disk.dataTable.put(mapping.get(index), line);
+				String location=disk.parserAddress(mapping.get(index));
+				info=info+mapping.get(index)+"&"+location+"&"+line;
+				infos.add(info);
 				index++;
 			}
 			reader.close();
@@ -55,17 +59,18 @@ public class Disk {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		if(Window.getInstance()!=null)
+			Window.getInstance().initDiskunits(infos);
 	}
 	public static Disk getInstance(){
 		return disk;
 	}
-	private void print(int address){
+	private String parserAddress(int address){
 		int platter=address/(trackCount*sectorCount);
 		int track=(address/sectorCount)%trackCount;
 		int sector=address%sectorCount;
-		String imfor="data in platter:"+platter+" track:"+track+" sector:"+sector;
-		System.out.println(imfor);
-		
+		String imfor=platter+"&"+track+"&"+sector;
+		return imfor;
 	}	
 	public String[] read(Integer[] addresses) throws InterruptedException{
 		Thread.sleep(1000);

@@ -14,14 +14,22 @@ public class Process implements Runnable{
 		//allocate pcb through kernal
 		pcb=Kernal.getInstance().allocatePCB();
 		//getAccessTable;
-		accessTable=AccessTableLoader.loadAccessTableByPid(pcb.pid+1);
+		accessTable=AccessTableLoader.loadAccessTableByPid(pcb.pid);
 	   // arrivetime=new Date();
 	}
-	public void issueOneInstruct(){
+	public boolean issueOneInstruct(){
+		if(PC>=accessTable.size())
+			return false;
+		if(Processer.getInsatnce()==null)
+			return false;
 		Instruct instruct=new Instruct(pcb.pid, PC, accessTable.get(PC));
 		instruct.arivetime=new Date().getTime();
 		Processer.getInsatnce().exceOneInstruct(instruct);
 		PC++;
+		if(PC>=accessTable.size())
+			return false;
+		else
+			return true;
 	}
 	@Override
 	public void run() {

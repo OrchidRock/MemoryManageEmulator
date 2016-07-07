@@ -6,4 +6,8 @@ public class TLBPTE{
 	public boolean validbit=false;
 	public int pa=-1;
 	public long referencetime=-1;
+	
+	public String toString(){
+		return tag+"&"+pa+"&"+dirtybit+"&"+validbit;
+	}
 }

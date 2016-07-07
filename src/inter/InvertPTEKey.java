@@ -17,4 +17,17 @@ public class InvertPTEKey extends Key{
 	public int getPid(){
 		return pid;
 	}
+	public String toString(){
+		return pid+"&"+la;
+	}
+	@Override
+	public boolean equals(Object otherobject) {
+		if(this==otherobject)
+			return true;
+		if(otherobject==null)
+			return false;
+		if(getClass()!=otherobject.getClass()) return false;
+		InvertPTEKey invertPTEKey=(InvertPTEKey)otherobject;
+		return (invertPTEKey.la==la) && (invertPTEKey.pid==pid);
+	}
 }

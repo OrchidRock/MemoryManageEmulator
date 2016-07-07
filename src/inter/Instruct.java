@@ -15,6 +15,6 @@ public class Instruct {
 	public long starttime=0;
 	public String data;
 	public String toString(){
-		return "pid:"+pid+",PC="+PC+",data="+data+"\n"+"exetime="+exetime+",waittime="+(starttime-arivetime);
+		return pid+"&"+PC+"&"+la+"&"+(starttime-arivetime)+"&"+exetime;
 	}
 }

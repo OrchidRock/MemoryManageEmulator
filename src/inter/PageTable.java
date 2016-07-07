@@ -1,20 +1,28 @@
 package inter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Set;
 
+import gui.Window;
 import tool.ConfLoader;
 import tool.ConfLoader.ConfType;
 
 public class PageTable extends Page {
-	private HashMap<Key, Integer> ptes = new HashMap<>();
+	private Hashtable<Key, Integer> ptes = new Hashtable<>();
 
 	// search the pagetable
 	public int searchPPN(int pid, int LA) {
 		Integer result = -1;
 		if (Kernal.PtSizeOptimizePolicy == Kernal.Inverted) {
 			InvertPTEKey Ikey = new InvertPTEKey(pid, LA);
+			/*Set<Key> keys=ptes.keySet();
+			for(Key key : keys){
+				System.err.println(key.hashCode());
+			}
+			System.err.println(Ikey.hashCode());*/
 			result = ptes.get(Ikey);
 			if (result == null) {
 				result = -1;
@@ -31,20 +39,32 @@ public class PageTable extends Page {
 
 	// when the pagefault happened get the new info from PLB and refresh the
 	// ptes
-	public boolean DrefreshPagetable(int pid, int LA, Integer PA) {
+	public boolean DrefreshPagetable(int pid, int LA, int PA) {
 		// D presents Dirty
 		if (Kernal.PtSizeOptimizePolicy == Kernal.Inverted) {
 			InvertPTEKey Ikey = new InvertPTEKey(pid, LA);
-			if(ptes.containsKey(Ikey))
+			if(ptes.containsKey(Ikey)){
 				ptes.replace(Ikey, PA);
-			else
+				if(Window.getInstance()!=null)
+					Window.getInstance().pagetableUpdate(2, Ikey.toString()+"&"+PA);
+			}
+			else{
 				ptes.put(Ikey, PA);
+				if(Window.getInstance()!=null)
+					Window.getInstance().pageTableadd(2,Ikey.toString()+"&"+PA);
+			}
 		} else if (Kernal.PtSizeOptimizePolicy == Kernal.Traditional) {
 			TrditionalPTEKey Tkey = new TrditionalPTEKey(LA);
-			if(ptes.containsKey(Tkey))
+			if(ptes.containsKey(Tkey)){
 				ptes.replace(Tkey, PA);
-			else
+				if(Window.getInstance()!=null)
+					Window.getInstance().pagetableUpdate(1, Tkey.toString()+"&"+PA);
+			}
+			else{
 				ptes.put(Tkey, PA);
+				if(Window.getInstance()!=null)
+					Window.getInstance().pageTableadd(1,Tkey.toString()+"&"+PA);
+			}
 		}
 		return true;
 	}
@@ -61,6 +81,8 @@ public class PageTable extends Page {
 			Integer pa = ptes.get(key);
 			if (pa.equals(PA)) {
 				ptes.replace(key, null);
+				if(Window.getInstance()!=null)
+					Window.getInstance().pagetableUpdate(1, key.toString()+"&"+"null");
 			}
 		}
 		return true;
@@ -85,5 +107,14 @@ public class PageTable extends Page {
 				page.freeBit = true;
 			}
 		}
+	}
+	public ArrayList<String> getAllPteString(){
+		ArrayList<String> ptelist=new ArrayList<>();
+		Set<Key> keys=ptes.keySet();
+		for(Key key : keys){
+			Integer value=ptes.get(key);
+			ptelist.add(key.toString()+"&"+value);
+		}
+		return ptelist;
 	}
 }

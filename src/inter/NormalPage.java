@@ -22,7 +22,7 @@ public class NormalPage extends Page{
 		for(int i=0;i<blocks.length;i++){
 			result+=blocks[i];
 		}
-		return result;
+		return super.toString()+"&"+referencetime+"&"+result;
 	}
 	public void setNewReferenceTime(long time){
 		referencetime=time;
