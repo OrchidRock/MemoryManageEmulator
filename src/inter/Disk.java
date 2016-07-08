@@ -86,6 +86,9 @@ public class Disk {
 		String[] data=new String[blocks.size()];
 		for(int i=0;i<data.length;i++)
 			data[i]=blocks.get(i);
+		int lastaddress=addresses[addresses.length-1];
+		if(Window.getInstance()!=null)
+			Window.getInstance().diskRead(lastaddress);
 		return data;
 	}
 	public void writeBack(Integer[] addresses,String[] newData){

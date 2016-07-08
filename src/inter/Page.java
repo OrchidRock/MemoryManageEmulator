@@ -19,6 +19,6 @@ public class Page {
 		return ptKey;
 	}
 	public String toString(){
-		return dirtyBit+"&"+freeBit;
+		return ""+dirtyBit;
 	}
 }

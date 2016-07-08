@@ -67,6 +67,7 @@ public class Window {
 	// for pagetable
 	private Hashtable<String, Integer> pagetableindex = new Hashtable<>();
 	private Hashtable<Integer, Integer> memoryindex = new Hashtable<>();
+	private Hashtable<Integer, Integer> diskindex=new Hashtable<>();
 	private static Window window;
 	private JLabel lblMode;
 
@@ -182,7 +183,7 @@ public class Window {
 		memorypanel.add(memoryscrollPane);
 		memoryT = new JTable();
 		memoryU = new DefaultTableModel(new Object[][] {},
-				new String[] { "PPN", "Dirtybit", "Freebit", "Timestamp", "Content" });
+				new String[] { "PPN", "Dirtybit", "DiskAddress", "Timestamp", "Content" });
 		memoryT.setModel(memoryU);
 		memoryscrollPane.setViewportView(memoryT);
 
@@ -311,11 +312,14 @@ public class Window {
 		Object[] object = new Object[5];
 		for (int i = 0; i < disks.size(); i++) {
 			String targets[] = disks.get(i).split("&");
+			int key=Integer.valueOf(targets[0]);
 			for (int j = 0; j < targets.length; j++) {
 				object[j] = targets[j];
 			}
 			diskU.addRow(object);
+			diskindex.put(key, diskU.getRowCount()-1);
 		}
+		jTableMoveToRow(diskT, diskT.getRowCount()-1);
 	}
 
 	public void processSwitch() {
@@ -338,7 +342,10 @@ public class Window {
 			tlbU.addRow(object);
 		}
 	}
-
+	public void diskRead(int key){
+		int index=diskindex.get(key);
+		jTableMoveToRow(diskT, index);
+	}
 	public void processerAddFinishedInstruct(String instruct) {
 		String[] infos = instruct.split("&");
 		Object[] objects = new Object[infos.length];
